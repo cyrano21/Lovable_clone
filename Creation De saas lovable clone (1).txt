@@ -1,0 +1,431 @@
+Absolument ! Voici un rapport détaillé sur la construction de l'application "Vibe", basée sur les informations fournies dans les sources, suivi d'un prompt complet pour tenter de la recréer à l'aide d'une IA.
+
+---
+
+### Rapport Détaillé sur la Construction de l'Application "Vibe"
+
+**Vibe** est un constructeur d'applications alimenté par l'IA qui permet de générer des sites web fonctionnels à partir d'une simple phrase. Cette application est conçue pour rivaliser avec des outils haut de gamme comme Lovable, Replit ou Bolt, mais avec l'avantage d'être auto-construite et entièrement personnalisable.
+
+**Fonctionnalités Clés :**
+*   **Génération d'Applications par IA :** Vibe peut générer des pages d'accueil de style Netflix, des tableaux Kanban, des tableaux de bord d'administration, etc., entièrement fonctionnels, y compris la mise en page, les interactions, les modales et les favoris.
+*   **Prévisualisation en Temps Réel et Code :** L'application générée peut être explorée directement dans un aperçu en direct avec une URL partageable. Il est également possible de basculer vers un onglet de code pour explorer chaque composant, utilitaire et fichier créé.
+*   **Système de Crédits et Facturation :** Chaque génération utilise un crédit. Lorsque les crédits sont épuisés, l'utilisateur est invité à mettre à niveau son compte. La facturation est gérée par Clerk, offrant une expérience développeur simplifiée sans webhooks complexes ni configuration Stripe.
+*   **Historique des Projets :** L'application permet de retrouver et d'accéder aux applications précédemment générées, appelées "Vibes".
+*   **Mode Sombre :** L'interface utilisateur de l'application prend entièrement en charge le mode sombre.
+*   **Révision de Code par IA :** Le processus de développement intègre Code Rabbit, un réviseur de code alimenté par l'IA, qui fournit des retours sur les problèmes de logique et les meilleures pratiques, signalant automatiquement les erreurs critiques.
+
+**Pile Technologique (Tech Stack) :**
+L'application Vibe est construite avec une pile technologique moderne et robuste :
+*   **Framework Frontend/Backend :** Next.js 15 avec React 19 (avec support pour le rendu côté serveur et les composants serveur).
+*   **Sécurité Full-Stack et Couche d'Accès aux Données :** tRPC combiné avec Tanstack Query.
+*   **Base de Données :** PostgreSQL fournie par Neon, avec Prisma ORM pour la gestion de la base de données.
+*   **Styling et Composants UI :** Tailwind CSS version 4 et Shadcn UI (pour des composants accessibles et réutilisables).
+*   **Authentification et Facturation :** Clerk.
+*   **Tâches de Fond et Agents IA :** Inngest (pour les jobs en arrière-plan, l'outillage des agents et les réseaux d'agents).
+*   **Exécution de Code Généré par IA :** E2B (pour des sandboxes cloud sécurisés).
+*   **Génération de Modèles de Sandbox :** Docker.
+*   **Modèles d'IA :** OpenAI (GPT-4.1 recommandé pour le codage et l'UI), Anthropic (Claude 3.5/4 pour le codage, mais avec des limites de débit strictes), ou Groq/Gemini (avec des réserves sur Gemini pour les outils).
+*   **Déploiement :** Vercel.
+
+**Processus de Construction Détaillé :**
+
+1.  **Configuration Initiale du Projet (Chapitre 1) :**
+    *   Installation de Next.js 15.3.4 avec TypeScript, ESLint, Tailwind CSS et un dossier `src`.
+    *   Initialisation de Shadcn UI (version 2.7.0) pour la bibliothèque de composants, incluant l'ajout de dépendances comme `clsx`, `lucide-react`, `tailwind-merge`, et la configuration de `globals.css` pour les variables de thème et le mode sombre.
+    *   Configuration d'un workflow Git approprié (commits, branches, pull requests).
+
+2.  **Mise en Place de la Base de Données (Chapitre 2) :**
+    *   Obtention d'une URL de connexion PostgreSQL via Neon.
+    *   Installation et configuration de Prisma ORM.
+    *   Définition d'un schéma Prisma (`User`, `Post` - plus tard `Message`, `Fragment`, `Project`).
+    *   Gestion des migrations Prisma (`npx prisma migrate dev`) et utilisation de Prisma Studio pour visualiser les données.
+    *   Configuration de la connexion Prisma (`lib/database.ts`) pour éviter les problèmes de "hot reload" de Next.js.
+
+3.  **Mise en Place de tRPC (Chapitre 3) :**
+    *   Installation des dépendances tRPC et Tanstack React Query.
+    *   Création des fichiers d'initialisation de tRPC (`init.ts`), des routeurs de base (`app.ts`), et des points d'API Next.js (`api/trpc/[trpc]/route.ts`).
+    *   Configuration du client tRPC et de `QueryClient` avec SuperJSON pour la sérialisation/désérialisation des données complexes.
+    *   Enveloppement de l'application avec `TRPCReactProvider` dans `layout.tsx`.
+    *   Exemples d'utilisation de tRPC dans les composants client et serveur, y compris le pré-chargement (`prefetchQuery`) pour des performances optimisées.
+
+4.  **Jobs en Arrière-Plan avec Inngest (Chapitre 4) :**
+    *   Compréhension de la nécessité des jobs en arrière-plan pour les tâches longues (ex: génération de résumé vidéo, création d'applications IA).
+    *   Installation d'Inngest et exécution du serveur de développement Inngest.
+    *   Création d'un client Inngest (`client.ts`) et d'un point d'API Inngest Next.js (`api/inngest/route.ts`).
+    *   Définition d'une première fonction Inngest simple (`functions.ts`) et invocation de cette fonction depuis une procédure tRPC.
+    *   Démonstration de la rapidité de la requête réseau par rapport à la durée du job en arrière-plan.
+
+5.  **Jobs d'IA en Arrière-Plan avec Inngest Agent Kit (Chapitre 5) :**
+    *   Choix d'un fournisseur d'IA (OpenAI GPT-4.1 est préféré pour sa fiabilité et ses performances pour le codage UI).
+    *   Configuration de la clé API du fournisseur d'IA dans les variables d'environnement.
+    *   Installation d'Inngest Agent Kit.
+    *   Création d'un agent IA (`code agent`) avec un "system prompt" définissant son rôle (ex: "expert Next.js developer") et sa capacité à générer du code.
+    *   Exécution de l'agent pour générer du code simple.
+
+6.  **Exploration des Sandboxes E2B (Chapitre 6) :**
+    *   Création d'un compte E2B et installation de l'outil CLI E2B.
+    *   Authentification CLI et vérification des sandboxes.
+    *   Création d'un modèle Dockerfile personnalisé pour une application Next.js (installant Node.js, Next.js, Shadcn UI). Ce modèle inclut un script `compile_page.sh` pour s'assurer que l'application Next.js démarre correctement dans le sandbox.
+    *   Configuration de Docker Desktop localement pour la construction du modèle.
+    *   Construction et publication du modèle E2B (`e2b template build`) avec une commande de démarrage.
+    *   Lancement d'un sandbox E2B depuis une fonction Inngest et récupération de l'URL du sandbox pour la prévisualisation. Configuration de la clé API E2B.
+
+7.  **Ajout d'Outils aux Agents IA (Chapitre 7) :**
+    *   Définition d'outils pour l'agent IA afin d'étendre ses capacités au sein du sandbox.
+    *   **Terminal Tool :** Permet à l'agent d'exécuter des commandes shell dans le sandbox (ex: `npm install`). Gère les sorties `stdout` et `stderr` pour permettre des tentatives automatiques avec un contexte d'erreur.
+    *   **Create/Update Files Tool :** Permet à l'agent de créer ou de modifier des fichiers dans le sandbox.
+    *   **Read Files Tool :** Permet à l'agent de lire le contenu des fichiers dans le sandbox.
+    *   Mise à jour du "system prompt" de l'agent pour lui indiquer qu'il peut utiliser ces nouveaux outils, en lui fournissant des instructions détaillées sur les règles de codage, les conventions et le format de sortie final (`task summary`) pour terminer sa tâche.
+    *   Implémentation du "lifecycle" et du "network" d'Inngest pour contrôler la boucle d'exécution de l'agent et détecter la complétion de la tâche via le `task summary`.
+
+8.  **Gestion des Messages et Fragments (Chapitre 8) :**
+    *   Ajout de schémas Prisma `Message` et `Fragment` : `Message` pour le contenu des conversations (utilisateur ou assistant), `Fragment` pour les détails de l'application générée (URL du sandbox, fichiers, titre).
+    *   Création d'un module tRPC `messages` avec des procédures pour créer et récupérer les messages.
+    *   Modification de la fonction Inngest pour sauvegarder la réponse de l'IA (y compris le `task summary` et les détails du fragment) dans la base de données.
+    *   Amélioration de la gestion des erreurs lors de l'enregistrement des résultats de l'IA.
+    *   Ajout d'un typage strict pour l'état de l'agent (`AgentState`).
+
+9.  **Gestion des Projets (Chapitre 9) :**
+    *   Ajout d'un schéma Prisma `Project` pour regrouper les conversations et les générations d'IA.
+    *   Mise à jour des relations Prisma pour lier les messages aux projets.
+    *   Génération d'un nom unique pour chaque projet à l'aide de `random-words-slugs`.
+    *   Modification de la logique de création de projet pour inclure la création initiale du message utilisateur et l'invocation du job en arrière-plan avec l'ID du projet.
+    *   Mise en place d'une route dynamique `/projects/[project ID]` pour afficher les détails du projet.
+
+10. **Développement de l'Interface Utilisateur des Messages (Chapitre 10) :**
+    *   Mise à jour de la procédure `messages.getMany` pour filtrer les messages par `projectID`.
+    *   Utilisation du pré-chargement tRPC dans les composants serveur pour une récupération de données plus rapide.
+    *   Création du composant `ProjectView` avec des panneaux redimensionnables pour l'aperçu et les messages.
+    *   Développement du `MessagesContainer` pour afficher la liste des messages, utilisant `MessageCard` pour chaque message.
+    *   Stylisation des `MessageCard` pour les messages utilisateur et assistant, incluant l'affichage du logo de l'application et les détails du fragment.
+    *   Création d'un `FragmentCard` pour afficher les aperçus des fragments générés.
+    *   Développement d'un `MessageForm` pour la saisie des messages avec validation, auto-redimensionnement du texte, et raccourcis clavier.
+
+11. **Amélioration de l'UI des Projets (Chapitre 11) :**
+    *   Gestion de la sélection du fragment actif dans `MessagesContainer` et mise à jour automatique basée sur le dernier message de l'assistant.
+    *   Ajout d'un état de chargement visuel (`MessageLoading`) avec des messages animés pour les jobs en arrière-plan.
+    *   Implémentation d'un `ProjectHeader` pour afficher le nom du projet, un bouton de retour, et un sélecteur de thème (mode sombre/clair).
+
+12. **Mise en Œuvre de la Vue Fragment (Chapitre 12) :**
+    *   Création du composant `FragmentWeb` pour afficher le contenu de l'URL du sandbox dans un `iframe`.
+    *   Ajout de contrôles de navigateur (rafraîchissement, copie de l'URL, ouverture dans un nouvel onglet) et d'un composant `Hint` pour les info-bulles.
+
+13. **Mise en Œuvre de la Vue Code (Chapitre 13) :**
+    *   Introduction de la navigation par onglets (`Tabs`) dans `ProjectView` pour basculer entre la vue web et la vue code.
+    *   Intégration de PrismJS pour la coloration syntaxique du code.
+    *   Développement d'un `CodeView` simple pour afficher le code mis en surbrillance.
+    *   Création d'un `FileExplorer` avec une vue arborescente des fichiers générés (`TreeView`), une barre de navigation (`Breadcrumb`), et la possibilité de copier le contenu des fichiers.
+
+14. **Développement de la Page d'Accueil (Chapitre 14) :**
+    *   Amélioration de la gestion des fragments actifs pour éviter les mises à jour non nécessaires.
+    *   Création d'une mise en page (`HomeLayout`) pour les pages de la section "accueil".
+    *   Développement d'un `ProjectForm` pour la page d'accueil (réutilisant la logique du `MessageForm`), permettant aux utilisateurs de démarrer de nouveaux projets.
+    *   Ajout de modèles de prompts prédéfinis pour faciliter la création de projets.
+    *   Implémentation d'un `ProjectList` pour afficher les projets précédemment générés par l'utilisateur.
+
+15. **Personnalisation du Thème (Chapitre 15) :**
+    *   Modification du fichier `globals.css` pour changer la palette de couleurs de l'application (passage à un thème jaune/orange).
+    *   Ajout de styles pour assurer que les boutons et autres éléments interactifs affichent un curseur "pointer" au survol.
+    *   Création d'une nouvelle variante de bouton (`tertiary`) pour des styles spécifiques.
+
+16. **Implémentation de l'Authentification (Clerk) (Chapitre 16) :**
+    *   Création d'un compte Clerk et configuration de l'application pour l'authentification par e-mail et Google.
+    *   Installation du package `clerk-nextjs` et ajout des variables d'environnement nécessaires.
+    *   Mise en place d'un `middleware.ts` pour protéger les routes de l'application et rediriger les utilisateurs non authentifiés vers les pages de connexion.
+    *   Intégration du `ClerkProvider` dans le `layout` racine de l'application.
+    *   Création des pages de connexion et d'inscription (`/sign-in`, `/sign-up`) à l'aide des composants fournis par Clerk et stylisation pour correspondre au thème de l'application.
+    *   Développement d'une `Navbar` avec des boutons de connexion/déconnexion et un affichage du statut de l'utilisateur.
+    *   Création d'un composant `UserControl` pour l'affichage de l'utilisateur et la gestion de la déconnexion.
+    *   **Procédures tRPC Protégées :** Introduction d'un "middleware" tRPC (`isAuth`) pour créer des `protectedProcedure` qui vérifient l'authentification de l'utilisateur avant d'autoriser l'accès aux données (par ex., `context.auth.userId`). **Ceci est la principale ligne de défense, le middleware Next.js étant un premier niveau pour l'expérience utilisateur**.
+    *   Mise à jour du schéma Prisma pour inclure un `userId` sur le modèle `Project`, garantissant que chaque projet est lié à un utilisateur spécifique et que les données sont isolées.
+
+17. **Système de Facturation et de Crédits (Chapitre 17) :**
+    *   **Activation de la Facturation Clerk :** Configuration des plans (gratuit et pro) directement dans le tableau de bord Clerk, incluant les descriptions et les fonctionnalités.
+    *   **Page de Tarification :** Intégration du composant `PricingTable` de Clerk, stylisé pour s'intégrer à l'application.
+    *   **Modèle d'Utilisation (Usage) Prisma :** Ajout d'un modèle `Usage` pour suivre les crédits restants de chaque utilisateur (`key`, `points`, `expire`).
+    *   **Utilitaire de Limiteur de Taux (`rate-limiter-flexible`) :** Utilisation de cette bibliothèque pour gérer la consommation de crédits, stockant les données dans la base de données via Prisma.
+    *   **Fonctions de Consommation de Crédits :** Création de `consumeCredits` (pour déduire les crédits) et `getUsageStatus` (pour afficher les crédits restants).
+    *   **Composant d'Utilisation :** Affichage des crédits restants et du temps de réinitialisation, avec un bouton de mise à niveau visible uniquement pour les utilisateurs gratuits.
+    *   **Déduction des Crédits :** Modification des procédures tRPC (`messages.create`, `projects.create`) pour appeler `consumeCredits` avant toute opération coûteuse. Si les crédits sont épuisés, une erreur "too many requests" est lancée, redirigeant l'utilisateur vers la page de tarification.
+    *   **Gestion des Plans Pro :** Les utilisateurs du plan Pro reçoivent un nombre de crédits plus élevé.
+
+18. **Mémoire de l'Agent IA (Chapitre 18) :**
+    *   **Contexte de Conversation :** L'agent IA est amélioré pour conserver le contexte des messages précédents. Les messages (utilisateur et assistant) sont récupérés depuis la base de données et formatés pour être inclus dans l'état de l'agent.
+    *   **Limitation de l'Historique :** L'historique des messages est limité (par exemple, aux 5 derniers messages) pour éviter de confondre le modèle.
+    *   **Agents Générateurs de Réponses :** Deux agents IA supplémentaires sont introduits (`fragmentTitleGenerator` et `responseGenerator`) utilisant des prompts spécifiques pour générer un titre concis pour le fragment et un résumé convivial pour la réponse de l'IA.
+    *   Ces sorties sont ensuite utilisées pour enrichir les données sauvegardées dans la base de données.
+
+19. **Corrections de Bugs et Améliorations Finales (Chapitre 19) :**
+    *   **Expiration du Sandbox :** La durée de vie des sandboxes E2B est augmentée (par exemple, à 30 minutes ou 1 heure) pour les présentations, via `sandbox.setTimeout`.
+    *   **Template E2B Privé :** Le modèle E2B est défini comme privé après le déploiement pour empêcher son utilisation par des tiers non autorisés.
+    *   **Amélioration de l'Historique de Conversation :** Confirmation que la logique de l'historique (messages triés, limités et inversés) améliore la compréhension contextuelle de l'IA.
+    *   **Gestion des Erreurs :** Implémentation de `react-error-boundary` autour des composants critiques (comme les sections avec `useSuspenseQuery`) pour afficher des messages d'erreur spécifiques au lieu de faire planter toute la page. Un `error.tsx` global est également ajouté comme dernière ligne de défense.
+    *   Amélioration de la robustesse de l'affichage des dates et des compteurs de crédits.
+    *   Vérification et confirmation que le mécanisme de "polling" (refetch interval) est optimisé et suffisant pour l'application mono-utilisateur.
+
+20. **Déploiement sur Vercel (Chapitre 20) :**
+    *   **Déploiement Initial :** Importation du projet GitHub sur Vercel et configuration des variables d'environnement.
+    *   **Script Post-Install :** Ajout de `prisma generate` dans le script `postinstall` de `package.json` pour s'assurer que le client Prisma est généré lors du déploiement.
+    *   **Correction du Linting :** Configuration d'ESLint (`.eslint.config.mjs`) pour ignorer le dossier `src/generated` afin d'éviter les échecs de build liés au linting.
+    *   **Mise à Jour de l'URL de l'Application :** Après le premier déploiement, l'URL de l'application Vercel est copiée et mise à jour dans la variable d'environnement `NEXT_PUBLIC_APP_URL`, nécessitant un redéploiement.
+    *   **Connexion Inngest à Vercel :** Intégration d'Inngest à l'application Vercel via le tableau de bord Inngest, et configuration du contournement de la protection de déploiement de Vercel pour permettre à Inngest de communiquer avec l'application en production.
+
+---
+
+### Prompt Complet pour une IA (pour recréer l'application "Vibe")
+
+**Titre :** Construire un SaaS AI Website Builder Complet : "Vibe" (Clone de Lovable/Replit)
+
+**Objectif Principal :** Développer une application web complète de type SaaS, "Vibe", qui permet aux utilisateurs de générer des applications web front-end entièrement fonctionnelles (pages d'accueil, tableaux de bord, etc.) à partir de descriptions textuelles, de les prévisualiser en temps réel dans un environnement isolé, d'explorer leur code source, de gérer leurs crédits et d'accéder à un système de facturation. L'application doit offrir une expérience utilisateur et développeur de pointe.
+
+**Technologies Requises (Strictement) :**
+*   **Frontend/Backend :** Next.js 15 (avec App Router), React 19, TypeScript.
+*   **Données :** PostgreSQL (via Neon), Prisma ORM (v6.10.1).
+*   **API/Typage :** tRPC (v11.4.2) avec Tanstack Query (v5.80.10) pour une sécurité de type "end-to-end".
+*   **Styling & UI :** Tailwind CSS 4, Shadcn UI (v2.7.0).
+*   **Authentification & Facturation :** Clerk (v6.23.0) pour l'authentification B2C et le système de facturation intégré.
+*   **Jobs en Arrière-Plan & Agents IA :** Inngest (v1.8.0) avec Inngest Agent Kit (v0.8.3).
+*   **Environnement d'Exécution IA :** E2B Sandboxes avec support Docker pour la création de templates personnalisés.
+*   **Modèle d'IA Principal :** OpenAI (GPT-4.1).
+*   **Utilitaires :** `random-words-slugs`, `date-fns`, `react-textarea-autosize`, `prismjs`, `react-error-boundary`, `rate-limiter-flexible`.
+*   **Déploiement Cible :** Vercel.
+
+**Architecture et Flux Fonctionnels Détaillés :**
+
+1.  **Initialisation du Projet :**
+    *   Démarrer une application Next.js 15 avec TypeScript, ESLint, Tailwind CSS et un répertoire `src`.
+    *   Configurer Shadcn UI, y compris les utilitaires `cn` pour les classes CSS dynamiques.
+    *   Mettre en place un dépôt Git avec des conventions de commit et branches structurées.
+
+2.  **Gestion de la Base de Données (Prisma & PostgreSQL) :**
+    *   Connecter l'application à une base de données PostgreSQL (Neon).
+    *   Définir les schémas Prisma pour :
+        *   `Project` : `id` (UUID), `name` (string), `userId` (string, requis), `createdAt`, `updatedAt`, avec une relation `messages` (un projet a plusieurs messages).
+        *   `Message` : `id` (UUID), `content` (string), `role` (enum: `USER`, `ASSISTANT`), `type` (enum: `RESULT`, `ERROR`), `createdAt`, `updatedAt`, `projectId` (string, requis), avec une relation `project` (un message appartient à un projet) et une relation optionnelle `fragment` (un message d'assistant peut avoir un fragment).
+        *   `Fragment` : `id` (UUID), `messageId` (string, unique), `sandboxUrl` (string), `title` (string), `files` (JSON), `createdAt`, `updatedAt`, avec une relation `message` (un fragment appartient à un message).
+        *   `Usage` : `key` (string, ID utilisateur), `points` (integer), `expire` (dateTime, optionnel) pour le suivi des crédits.
+    *   Implémenter un système de migrations Prisma pour mettre à jour la base de données.
+
+3.  **Couche d'Accès aux Données (tRPC) :**
+    *   Configurer tRPC pour des procédures API côté serveur et des hooks côté client.
+    *   Créer un contexte tRPC qui accède à l'objet `auth` de Clerk pour obtenir l'`userId` de l'utilisateur authentifié.
+    *   Définir des `protectedProcedure` qui garantissent que les requêtes sont authentifiées et associent l'`userId` aux opérations CRUD.
+    *   **Procédures `messages` :** `create` (sauvegarde le message utilisateur avec `projectId`), `getMany` (récupère les messages d'un projet spécifique de l'utilisateur authentifié, incluant les fragments).
+    *   **Procédures `projects` :** `create` (crée un nouveau projet avec un nom généré aléatoirement et l'`userId`), `getMany` (récupère tous les projets de l'utilisateur authentifié), `getOne` (récupère un projet par ID pour l'utilisateur authentifié).
+    *   **Procédures `usage` :** `status` (récupère l'état des crédits de l'utilisateur).
+    *   Implémenter le pré-chargement (`prefetchQuery`) dans les composants serveur pour optimiser le chargement initial des données.
+
+4.  **Jobs en Arrière-Plan et Agents IA (Inngest & E2B) :**
+    *   **Configuration Inngest :** Installer et exécuter le serveur de développement Inngest. Créer un client Inngest et le point d'API `/api/inngest`.
+    *   **Fonction Inngest Principale (`codeAgentFunction`) :**
+        *   **Entrée :** `value` (le prompt de l'utilisateur), `projectId`.
+        *   **Récupération de l'Historique :** Récupérer les `N` derniers messages (`Message` de type `USER` et `ASSISTANT`) du projet via Prisma, triés par `createdAt` (ascendant, puis inversé pour avoir les plus récents à la fin), pour fournir un contexte à l'agent IA.
+        *   **Création/Connexion au Sandbox E2B :** Instancier ou se connecter à un sandbox E2B en utilisant un modèle Dockerfile personnalisé (Next.js 15, React 19, Shadcn UI) pré-construit. Assurer que le sandbox reste actif pendant une durée définie (ex: 30 minutes).
+        *   **Agent IA (`codeAgent`) :**
+            *   Instancier un agent via `createAgent` d'Inngest Agent Kit, utilisant OpenAI (GPT-4.1) avec une température basse (ex: 0.1 pour le déterminisme).
+            *   Fournir un "system prompt" détaillé : "You are an expert Next.js 15 developer, you write readable, maintainable code. You use Tailwind CSS and Shadcn UI. Always add `use client` to the top of `app/page.tsx` and other relevant files using React hooks or browser APIs. You have access to the following tools..."
+            *   **Outils de l'Agent :**
+                *   `terminal` : Pour exécuter des commandes (ex: `npm install framer-motion`). Gérer les sorties `stdout`/`stderr` et retenter en cas d'échec (ex: avec `--legacy-peer-deps`).
+                *   `createOrUpdateFiles` : Pour créer ou modifier des fichiers (avec `path` et `content`).
+                *   `readFiles` : Pour lire le contenu des fichiers (avec `paths`).
+            *   **Boucle d'Exécution de l'Agent :** L'agent opère dans un `network` (via `createNetwork`) avec un `maxIteration` (ex: 15). Il utilise les outils pour exécuter sa tâche.
+            *   **Condition de Terminaison :** L'agent doit retourner une sortie au format `TASK_SUMMARY: <description>`. Le `network` s'arrête lorsque ce format est détecté dans le dernier message de l'agent.
+        *   **Génération de Méta-Données par IA :**
+            *   Utiliser des agents IA supplémentaires (OpenAI, modèle moins cher) pour générer :
+                *   `fragmentTitleGenerator` : Un titre concis pour l'application générée (ex: "Application Calculatrice").
+                *   `responseGenerator` : Un résumé convivial de la tâche accomplie pour l'utilisateur (ex: "Voici ce que j'ai créé pour vous : une application calculatrice avec un design moderne.").
+        *   **Sauvegarde des Résultats :** Sauvegarder dans la base de données (`Message` de type `ASSISTANT`, lié au `Project`) :
+            *   Le résumé généré par `responseGenerator`.
+            *   Un `Fragment` associé, contenant l'URL du sandbox E2B et un objet `files` (mappage `filePath` -> `content`) de tous les fichiers modifiés par l'agent IA.
+            *   Le titre généré par `fragmentTitleGenerator`.
+        *   **Gestion d'Erreur dans les Jobs :** En cas d'échec de la génération IA ou de problèmes de fichiers, enregistrer un message d'erreur d'assistant dans la DB.
+
+5.  **Interface Utilisateur (Next.js, React, Tailwind CSS, Shadcn UI) :**
+
+    *   **Page d'Accueil (`/`) :**
+        *   **Layout Global (`HomeLayout`) :** Avec un arrière-plan visuellement amélioré (points, dégradés).
+        *   **`ProjectForm` :** Formulaire de saisie pour le prompt utilisateur.
+            *   Réutiliser la logique du formulaire de message.
+            *   Boutons de modèles de prompts prédéfinis (ex: "Build a Netflix clone").
+            *   Validation du prompt (longueur min/max).
+            *   Définiton du style des boutons custom (variante `tertiary`).
+        *   **`ProjectList` :** Affiche les projets sauvegardés de l'utilisateur avec des liens vers la page du projet.
+            *   Affichage du nom du projet, timestamp relatif (`date-fns`), icône.
+            *   S'affiche uniquement si l'utilisateur est connecté.
+
+    *   **Page Projet (`/projects/[projectId]`) :**
+        *   **`ProjectHeader` :** Affiche le nom du projet, un bouton "Retour au tableau de bord", et un sélecteur de thème (mode clair/sombre).
+            *   S'adapte dynamiquement au défilement pour avoir un arrière-plan opaque.
+        *   **Layout Redimensionnable (`ResizablePanelGroup`) :** Deux panneaux horizontaux.
+            *   **Panneau Gauche (Chat) :**
+                *   `MessagesContainer` : Affiche une liste déroulante des `MessageCard` pour chaque message utilisateur/assistant.
+                *   `MessageCard` : Affiche le contenu, le rôle (utilisateur/assistant), le titre du fragment et une icône.
+                *   `MessageForm` : Formulaire de saisie pour envoyer de nouveaux prompts dans le contexte du projet.
+                *   `MessageLoading` : Composant de chargement animé (messages scintillants) affiché pendant que l'agent IA travaille.
+                *   Gestion de la sélection automatique du dernier fragment de l'assistant et de la sélection manuelle par l'utilisateur.
+                *   Polling optimisé (`refetchInterval`) pour les mises à jour en temps réel des messages.
+            *   **Panneau Droit (Aperçu/Code) :**
+                *   Navigation par onglets (`Tabs`) : "Demo" (aperçu web) et "Code" (explorateur de code).
+                *   **Onglet "Demo" (`FragmentWeb`) :**
+                    *   Affiche l'URL du sandbox E2B dans un `iframe` pour une prévisualisation en direct.
+                    *   Barre de navigation simple avec : bouton de rafraîchissement (qui utilise une `key` sur l'iframe pour forcer le re-rendu), bouton de copie de l'URL, bouton d'ouverture dans un nouvel onglet.
+                    *   Composant `Hint` pour les info-bulles contextuelles sur les icônes.
+                *   **Onglet "Code" (`FileExplorer`) :**
+                    *   Vue arborescente des fichiers générés dans le sandbox (`TreeView`).
+                    *   Chemin de navigation (`Breadcrumb`) pour la hiérarchie des fichiers, avec gestion de l'ellipses pour les chemins profonds.
+                    *   `CodeView` : Affiche le contenu du fichier sélectionné avec coloration syntaxique (`PrismJS`) et un thème sombre/clair.
+                    *   Bouton "Copier le code" avec indicateur visuel.
+                    *   Le défilement dans la vue code doit être fonctionnel.
+
+    *   **Pages d'Authentification (Clerk) :**
+        *   `Sign-in` et `Sign-up` pages (`/home/sign-in`, `/home/sign-up`).
+        *   Styliser les composants Clerk pour correspondre au thème de l'application, y compris le mode sombre.
+
+    *   **Page de Tarification (`/home/pricing`) :**
+        *   Utiliser le composant `PricingTable` de Clerk.
+        *   Afficher les plans "Free" (5 crédits/mois) et "Pro" (100 crédits/mois) avec leurs descriptions et fonctionnalités.
+        *   Styliser pour correspondre au thème de l'application et supporter le mode sombre.
+
+6.  **Fonctionnalités de Crédits et de Facturation :**
+    *   **Deduction de Crédits :** Déduire 1 crédit à chaque tentative de création de projet ou de message (`consumeCredits` dans les procédures tRPC `create`).
+    *   **Gestion d'Erreurs de Crédits :** Si les crédits sont épuisés, lancer une erreur tRPC de type "too many requests" et rediriger l'utilisateur vers la page de tarification.
+    *   **Affichage des Crédits :** Le composant `Usage` dans le formulaire de message et dans l'en-tête du projet affiche les crédits restants de l'utilisateur (déduction dynamique selon le plan).
+    *   **Mise à Jour de l'UI des Crédits :** Invalider la requête de statut des crédits (`queryClient.invalidateQueries`) après chaque consommation ou mise à niveau.
+    *   **Plan Pro :** Si l'utilisateur est sur le plan Pro (vérifié via Clerk `hasPlan`), lui accorder 100 crédits au lieu de 5. Le bouton "Upgrade" disparaît pour les utilisateurs Pro.
+
+7.  **Gestion des Erreurs :**
+    *   Implémenter `react-error-boundary` autour des composants et segments qui utilisent `useSuspenseQuery` pour encapsuler les erreurs et afficher un fallback (`fallbackRender`).
+    *   Ajouter un fichier `app/error.tsx` global comme dernière ligne de défense pour les erreurs non capturées.
+    *   Utiliser `try-catch` dans les fonctions critiques (ex: formatage des dates, `consumeCredits`) pour gérer les exceptions gracieusement et éviter les plantages de page.
+
+8.  **Déploiement :**
+    *   Configurer le déploiement continu sur Vercel à partir d'un dépôt GitHub.
+    *   Assurer que le build Vercel génère le client Prisma (`postinstall` script).
+    *   Ajuster la configuration ESLint pour ignorer le dossier `src/generated`.
+    *   Mettre à jour la variable d'environnement `NEXT_PUBLIC_APP_URL` avec l'URL de production Vercel.
+    *   Connecter l'application Vercel à Inngest Cloud, y compris la configuration des variables d'environnement et du contournement de la protection de déploiement.
+    *   Assurer que les templates E2B utilisés en production sont privés et accessibles uniquement via l'organisation configurée.
+
+**Instructions Supplémentaires pour l'IA :**
+*   **Modularité et Maintenabilité :** Le code doit être hautement modulaire, avec des dossiers clairs pour les modules (ex: `modules/home`, `modules/projects`, `modules/messages`, `modules/usage`) et des conventions de nommage cohérentes.
+*   **Qualité du Code :** Respecter les meilleures pratiques de React et Next.js, incluant l'optimisation des performances, l'accessibilité et la réactivité du design.
+*   **Commentaires et Documentation :** Inclure des commentaires clairs là où la logique est complexe, en particulier pour les interactions IA et les flux de données.
+*   **Test :** Assurer que les fonctionnalités clés sont testées et robustes.
+
+Ce prompt est un plan détaillé pour construire l'application "Vibe". L'IA devra interpréter ces instructions pour générer le code source complet de l'application, en respectant l'architecture et les technologies spécifiées.           Voici l'arborescence structurelle du projet, basée sur les informations fournies dans les sources :
+
+Le projet principal est nommé **Vibe**.
+
+```
+.
+├── .env                  # Fichier de configuration des variables d'environnement
+├── .gitignore            # Fichier d'ignorance pour Git
+├── compile_page.sh       # Script Bash pour compiler les pages dans le sandbox E2B
+├── e2b.toml              # Fichier de configuration E2B pour les templates de sandbox
+├── eslint.config.mjs     # Configuration ESLint pour le linting du code
+├── next.config.mjs       # Configuration Next.js
+├── package.json          # Manifeste du projet, liste les dépendances et scripts
+├── package-lock.json     # Fichier de lock des dépendances
+├── prisma/               # Dossier pour Prisma ORM
+│   ├── migrations/       # Historique des migrations de base de données
+│   └── schema.prisma     # Schéma de la base de données Prisma
+├── public/               # Contenu statique accessible publiquement
+│   └── logo.svg          # Logo de l'application
+├── sandbox-templates/    # Templates Docker pour les sandboxes E2B
+│   └── nextjs/           # Template Next.js
+│       └── e2b.dockerfile # Fichier Docker pour l'environnement Next.js
+├── source/               # Dossier principal du code source
+│   ├── app/              # Dossier principal des routes et pages Next.js
+│   │   ├── api/          # Dossier pour les API routes
+│   │   │   ├── ingest/   # Endpoint pour Inngest
+│   │   │   │   └── route.ts  # Route d'API pour Inngest
+│   │   │   └── trpc/     # Endpoint pour tRPC
+│   │   │       └── [...trpc]/ # Route catch-all pour tRPC
+│   │   │           └── route.ts  # Route d'API pour tRPC
+│   │   ├── favicon.ico   # Icône de favori
+│   │   ├── globals.css   # Styles CSS globaux
+│   │   ├── layout.tsx    # Layout racine de l'application
+│   │   ├── home/         # Groupe de routes pour la page d'accueil et l'authentification
+│   │   │   ├── layout.tsx  # Layout spécifique à la section "home"
+│   │   │   ├── page.tsx    # Page d'accueil (initialement à la racine de 'app', déplacée ici)
+│   │   │   ├── pricing/    # Page de tarification
+│   │   │   │   └── page.tsx  # Page de tarification
+│   │   │   ├── sign-in/    # Page de connexion
+│   │   │   │   └── [[...sign-in]]/ # Route catch-all pour la connexion
+│   │   │   │       └── page.tsx  # Page de connexion
+│   │   │   └── sign-up/    # Page d'inscription
+│   │   │       └── [[...sign-up]]/ # Route catch-all pour l'inscription
+│   │   │           └── page.tsx  # Page d'inscription
+│   │   └── projects/     # Dossier des projets
+│   │       └── [projectId]/ # Dossier dynamique pour un projet spécifique
+│   │           └── page.tsx  # Page d'affichage d'un projet
+│   ├── components/       # Composants réutilisables
+│   │   ├── UI/           # Composants Shadcn UI
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── collapsible.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── resizable.tsx
+│   │   │   ├── sonner.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   └── tooltip.tsx
+│   │   ├── code-view/      # Composant d'affichage de code
+│   │   │   ├── index.tsx   # Composant d'affichage de code
+│   │   │   └── code-theme.css # Thème CSS pour la coloration syntaxique
+│   │   ├── file-explorer.tsx # Composant d'explorateur de fichiers
+│   │   ├── fragment-web.tsx  # Composant d'affichage de la prévisualisation web du fragment
+│   │   ├── hint.tsx        # Composant de bulle d'aide (tooltip)
+│   │   ├── message-loading.tsx # Composant d'état de chargement des messages
+│   │   ├── project-header.tsx  # Composant d'en-tête de projet
+│   │   └── user-control.tsx  # Composant de contrôle utilisateur (bouton de déconnexion, etc.)
+│   ├── ingest/           # Fichiers liés à Inngest pour les jobs en arrière-plan
+│   │   ├── client.ts     # Client Inngest
+│   │   ├── functions.ts  # Fonctions Inngest (agents AI)
+│   │   └── utils.ts      # Utilitaires pour Inngest, incluant la connexion au sandbox E2B
+│   ├── lib/              # Bibliothèques et utilitaires
+│   │   ├── database.ts   # Configuration du client Prisma pour la base de données
+│   │   ├── utils.ts      # Utilitaires généraux, incluant la fonction `cn` et la conversion de fichiers en structure arborescente
+│   │   └── usage.ts      # Logique de suivi d'utilisation et de consommation de crédits
+│   ├── middleware.ts     # Middleware Next.js pour la protection des routes et l'authentification Clerk
+│   ├── modules/          # Modules de l'application, organisés par entité ou fonctionnalité
+│   │   ├── home/         # Module pour la section d'accueil
+│   │   │   ├── constants.ts  # Constantes pour les templates de projet
+│   │   │   └── UI/       # Composants UI pour la section d'accueil
+│   │   │       └── components/ # Composants UI spécifiques
+│   │   │           ├── navbar.tsx      # Barre de navigation
+│   │   │           ├── project-form.tsx # Formulaire de création de projet (copie de message-form)
+│   │   │           └── projects-list.tsx # Liste des projets précédents
+│   │   ├── messages/     # Module pour les entités de messages
+│   │   │   └── server/   # Logique côté serveur pour les messages
+│   │   │       └── procedures.ts # Procédures tRPC pour les messages
+│   │   ├── projects/     # Module pour les entités de projets
+│   │   │   ├── UI/       # Composants UI pour les projets
+│   │   │   │   ├── components/ # Composants UI spécifiques
+│   │   │   │   │   ├── message-card.tsx       # Carte d'affichage d'un message
+│   │   │   │   │   ├── message-form.tsx       # Formulaire d'envoi de message
+│   │   │   │   │   ├── messages-container.tsx # Conteneur des messages d'un projet
+│   │   │   │   │   └── usage.tsx              # Composant d'affichage de l'utilisation des crédits
+│   │   │   │   └── views/    # Vues spécifiques aux projets
+│   │   │   │       └── project-view.tsx       # Vue principale d'un projet
+│   │   │   └── server/   # Logique côté serveur pour les projets
+│   │   │       └── procedures.ts # Procédures tRPC pour les projets
+│   │   └── usage/        # Module pour le suivi de l'utilisation
+│   │       └── server/   # Logique côté serveur pour l'utilisation
+│   │           └── procedures.ts # Procédures tRPC pour le statut d'utilisation
+│   ├── hooks/            # Hooks React personnalisés
+│   │   ├── use-current-theme.ts # Hook pour déterminer le thème actuel (light/dark/system)
+│   │   └── use-scroll.ts        # Hook pour détecter le défilement de la page
+│   ├── prompt.ts         # Contient les prompts du système pour les agents AI
+│   ├── tsconfig.json     # Configuration TypeScript
+│   ├── trpc/             # Configuration tRPC
+│   │   ├── client.tsx    # Client tRPC pour les composants client
+│   │   ├── init.ts       # Initialisation de tRPC
+│   │   ├── queryclient.ts # Configuration du client de requête Tanstack Query
+│   │   ├── routers/      # Définition des routeurs tRPC
+│   │   │   └── app.ts    # Routeur tRPC principal
+│   │   └── server.tsx    # Fonctions côté serveur pour tRPC
+│   └── types.ts          # Définitions de types globaux
+└── tsconfig.json         # Fichier de configuration TypeScript (dupliqué/racine)
+```
